@@ -86,7 +86,7 @@ class Message(models.Model):
     # The actual data - a pickled EmailMessage
     message_data = models.TextField()
     when_added = models.DateTimeField(default=datetime.now)
-    when_send = models.DateTimeField(null=true)
+    when_send = models.DateTimeField(null=True)
     priority = models.CharField(max_length=1, choices=PRIORITIES, default="2")
     # @@@ campaign?
     # @@@ content_type?
