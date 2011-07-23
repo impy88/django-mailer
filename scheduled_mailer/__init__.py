@@ -30,7 +30,7 @@ PRIORITY_MAPPING = {
 def send_mail(subject, message, from_email, recipient_list, priority="medium",
               fail_silently=False, auth_user=None, auth_password=None):
     from django.utils.encoding import force_unicode
-    from mailer.models import make_message
+    from scheduled_mailer.models import make_message
     
     priority = PRIORITY_MAPPING[priority]
     
@@ -54,7 +54,7 @@ def send_html_mail(subject, message, message_html, from_email, recipient_list,
     """
     from django.utils.encoding import force_unicode
     from django.core.mail import EmailMultiAlternatives
-    from mailer.models import make_message
+    from scheduled_mailer.models import make_message
     
     priority = PRIORITY_MAPPING[priority]
     
@@ -77,7 +77,7 @@ def send_html_mail(subject, message, message_html, from_email, recipient_list,
 
 def send_mass_mail(datatuple, fail_silently=False, auth_user=None,
                    auth_password=None, connection=None):
-    from mailer.models import make_message
+    from scheduled_mailer.models import make_message
     num_sent = 0
     for subject, message, sender, recipient in datatuple:
         num_sent += send_mail(subject, message, sender, recipient)

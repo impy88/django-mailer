@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from mailer.models import Message, DontSendEntry, MessageLog
+from scheduled_mailer.models import Message, DontSendEntry, MessageLog
 
 
 class MessageAdmin(admin.ModelAdmin):

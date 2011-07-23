@@ -1,6 +1,6 @@
 from django.core.mail.backends.base import BaseEmailBackend
 
-from mailer.models import Message
+from scheduled_mailer.models import Message
 
 
 class DbBackend(BaseEmailBackend):

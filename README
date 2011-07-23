@@ -1,4 +1,3 @@
-django-mailer by James Tauber <http://jtauber.com/>
-http://code.google.com/p/django-mailer/
+django-schedule-mailer by Eugene “Aeron” Glybin
 
-A reusable Django app for queuing the sending of email
+A reusable Django app for queuing and scheduling the sending of email. Django-mailer (by James Tauber) fork.

@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import NoArgsCommand
 
-from mailer.models import Message
+from scheduled_mailer.models import Message
 
 
 class Command(NoArgsCommand):

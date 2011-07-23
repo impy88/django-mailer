@@ -1,6 +1,6 @@
 
 =============
-django-mailer
+django-scheduled-mailer
 =============
 
 Contents:
