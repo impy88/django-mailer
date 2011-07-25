@@ -131,6 +131,13 @@ set the attribute again to cause the underlying serialised data to be updated.""
         else:
             return ""
 
+    def _get_when(self):
+	    return self.when_send
+
+    @property
+    def when(self):
+	    return self._get_when()
+
 
 def filter_recipient_list(lst):
     if lst is None:

@@ -75,7 +75,7 @@ def send_all():
     try:
         connection = None
         for message in prioritize():
-            if message.when_send > datetime.datetime.now():
+            if message.when and message.when > datetime.datetime.now():
                 continue
             else:
                 try:
