@@ -384,6 +384,7 @@ class SQLiteFileLock(LockBase):
                       "   lock_file varchar(32),"
                       "   unique_name varchar(32)"
                       ")")
+            c.close()
         except sqlite3.OperationalError:
             pass
         else:
@@ -403,38 +404,44 @@ class SQLiteFileLock(LockBase):
         else:
             wait = timeout / 10
 
-        cursor = self.connection.cursor()
-
         while True:
             if not self.is_locked():
                 # Not locked.  Try to lock it.
+                cursor = self.connection.cursor()
                 cursor.execute("insert into locks"
                                "  (lock_file, unique_name)"
                                "  values"
                                "  (?, ?)",
                                (self.lock_file, self.unique_name))
+                cursor.close()
                 self.connection.commit()
 
                 # Check to see if we are the only lock holder.
+                cursor = self.connection.cursor()
                 cursor.execute("select * from locks"
                                "  where unique_name = ?",
                                (self.unique_name,))
                 rows = cursor.fetchall()
+                cursor.close()
                 if len(rows) > 1:
                     # Nope.  Someone else got there.  Remove our lock.
+                    cursor = self.connection.cursor()
                     cursor.execute("delete from locks"
                                    "  where unique_name = ?",
                                    (self.unique_name,))
+                    cursor.close()
                     self.connection.commit()
                 else:
                     # Yup.  We're done, so go home.
                     return
             else:
                 # Check to see if we are the only lock holder.
+                cursor = self.connection.cursor()
                 cursor.execute("select * from locks"
                                "  where unique_name = ?",
                                (self.unique_name,))
                 rows = cursor.fetchall()
+                cursor.close()
                 if len(rows) == 1:
                     # We're the locker, so go home.
                     return
@@ -460,6 +467,7 @@ class SQLiteFileLock(LockBase):
         cursor.execute("delete from locks"
                        "  where unique_name = ?",
                        (self.unique_name,))
+        cursor.close()
         self.connection.commit()
 
     def _who_is_locking(self):
@@ -467,7 +475,9 @@ class SQLiteFileLock(LockBase):
         cursor.execute("select unique_name from locks"
                        "  where lock_file = ?",
                        (self.lock_file,))
-        return cursor.fetchone()[0]
+        row = cursor.fetchone()[0]
+        cursor.close()
+        return row
         
     def is_locked(self):
         cursor = self.connection.cursor()
@@ -475,6 +485,7 @@ class SQLiteFileLock(LockBase):
                        "  where lock_file = ?",
                        (self.lock_file,))
         rows = cursor.fetchall()
+        cursor.close()
         return not not rows
 
     def i_am_locking(self):
@@ -483,13 +494,16 @@ class SQLiteFileLock(LockBase):
                        "  where lock_file = ?"
                        "    and unique_name = ?",
                        (self.lock_file, self.unique_name))
-        return not not cursor.fetchall()
+        rows = cursor.fetchall()
+        cursor.close()
+        return not not rows
 
     def break_lock(self):
         cursor = self.connection.cursor()
         cursor.execute("delete from locks"
                        "  where lock_file = ?",
                        (self.lock_file,))
+        cursor.close()
         self.connection.commit()
 
 if hasattr(os, "link"):
