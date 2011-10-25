@@ -75,9 +75,7 @@ def send_all():
     try:
         connection = None
         for message in prioritize():
-            if message.when and message.when > datetime.datetime.now():
-                continue
-            else:
+            if not message.when or message.when <= datetime.datetime.now():
                 try:
                     if connection is None:
                         connection = get_connection(backend=EMAIL_BACKEND)
