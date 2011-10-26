@@ -24,7 +24,7 @@ EMPTY_QUEUE_SLEEP = getattr(settings, "MAILER_EMPTY_QUEUE_SLEEP", 30)
 
 # lock timeout value. how long to wait for the lock to become available.
 # default behavior is to never wait for the lock to be available.
-LOCK_WAIT_TIMEOUT = getattr(settings, "MAILER_LOCK_WAIT_TIMEOUT", -1)
+LOCK_WAIT_TIMEOUT = getattr(settings, "MAILER_LOCK_WAIT_TIMEOUT", 10)
 
 # The actual backend to use for sending, defaulting to the Django default.
 EMAIL_BACKEND = getattr(settings, "MAILER_EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
@@ -34,18 +34,19 @@ def prioritize():
     """
     Yield the messages in the queue in the order they should be sent.
     """
-    
-    while True:
-        while Message.objects.high_priority().count() or Message.objects.medium_priority().count():
-            while Message.objects.high_priority().count():
-                for message in Message.objects.high_priority().order_by("when_added"):
-                    yield message
-            while Message.objects.high_priority().count() == 0 and Message.objects.medium_priority().count():
-                yield Message.objects.medium_priority().order_by("when_added")[0]
-        while Message.objects.high_priority().count() == 0 and Message.objects.medium_priority().count() == 0 and Message.objects.low_priority().count():
-            yield Message.objects.low_priority().order_by("when_added")[0]
-        if Message.objects.non_deferred().count() == 0:
-            break
+    for message in Message.objects.exclude(when_send__gt=datetime.datetime.now()).order_by("priority", "when_added"):
+        yield message
+    # while True:
+    #     while Message.objects.high_priority().count() or Message.objects.medium_priority().count():
+    #         while Message.objects.high_priority().count():
+    #             for message in Message.objects.high_priority().order_by("when_added"):
+    #                 yield message
+    #         while Message.objects.high_priority().count() == 0 and Message.objects.medium_priority().count():
+    #             yield Message.objects.medium_priority().order_by("when_added")[0]
+    #     while Message.objects.high_priority().count() == 0 and Message.objects.medium_priority().count() == 0 and Message.objects.low_priority().count():
+    #         yield Message.objects.low_priority().order_by("when_added")[0]
+    #     if Message.objects.non_deferred().count() == 0:
+    #         break
 
 
 def send_all():
@@ -73,26 +74,23 @@ def send_all():
     sent = 0
     
     try:
-        connection = None
         for message in prioritize():
-            if not message.when or message.when <= datetime.datetime.now():
-                try:
-                    if connection is None:
-                        connection = get_connection(backend=EMAIL_BACKEND)
-                    logging.info("sending message '%s' to %s" % (message.subject.encode("utf-8"), u", ".join(message.to_addresses).encode("utf-8")))
-                    email = message.email
-                    email.connection = connection
-                    email.send()
-                    MessageLog.objects.log(message, 1) # @@@ avoid using literal result code
-                    message.delete()
-                    sent += 1
-                except (socket_error, smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused, smtplib.SMTPAuthenticationError), err:
-                    message.defer()
-                    logging.info("message deferred due to failure: %s" % err)
-                    MessageLog.objects.log(message, 3, log_message=str(err)) # @@@ avoid using literal result code
-                    deferred += 1
-                    # Get new connection, it case the connection itself has an error.
-                    connection = None
+            try:
+                connection = get_connection(backend=EMAIL_BACKEND)
+                logging.info("sending message '%s' to %s" % (message.subject.encode("utf-8"), u", ".join(message.to_addresses).encode("utf-8")))
+                email = message.email
+                email.connection = connection
+                email.send()
+                MessageLog.objects.log(message, 1) # @@@ avoid using literal result code
+                message.delete()
+                sent += 1
+            except (socket_error, smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused, smtplib.SMTPAuthenticationError), err:
+                message.defer()
+                logging.info("message deferred due to failure: %s" % err)
+                MessageLog.objects.log(message, 3, log_message=str(err)) # @@@ avoid using literal result code
+                deferred += 1
+                # Get new connection, it case the connection itself has an error.
+                # connection = None
     finally:
         logging.debug("releasing lock...")
         lock.release()
