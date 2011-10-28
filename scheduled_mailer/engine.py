@@ -34,20 +34,8 @@ def prioritize():
     """
     Yield the messages in the queue in the order they should be sent.
     """
-    for message in Message.objects.exclude(when_send__gt=datetime.datetime.now()).order_by("priority", "when_added"):
+    for message in Message.objects.exclude(when_send__gt=datetime.datetime.now(), priority__lt=4).order_by("priority", "when_added"):
         yield message
-    # while True:
-    #     while Message.objects.high_priority().count() or Message.objects.medium_priority().count():
-    #         while Message.objects.high_priority().count():
-    #             for message in Message.objects.high_priority().order_by("when_added"):
-    #                 yield message
-    #         while Message.objects.high_priority().count() == 0 and Message.objects.medium_priority().count():
-    #             yield Message.objects.medium_priority().order_by("when_added")[0]
-    #     while Message.objects.high_priority().count() == 0 and Message.objects.medium_priority().count() == 0 and Message.objects.low_priority().count():
-    #         yield Message.objects.low_priority().order_by("when_added")[0]
-    #     if Message.objects.non_deferred().count() == 0:
-    #         break
-
 
 def send_all():
     """
