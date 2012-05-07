@@ -15,6 +15,9 @@ setup(
         "scheduled_mailer.management.commands",
     ],
     package_dir={"scheduled_mailer": "scheduled_mailer"},
+    dependency_links = [
+        'https://github.com/lxml/lxml/tarball/master#egg=lxml-2.3.2',
+    ],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
